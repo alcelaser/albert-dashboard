@@ -1,7 +1,9 @@
-import type { AssetQuote, PricePoint, OHLC } from '../types';
+import type { AssetQuote, PricePoint, OHLC, VolumeBar } from '../types';
+import type { TimeRange } from '../types';
 
 interface CoinGeckoMarketChart {
   prices: [number, number][];
+  total_volumes: [number, number][];
 }
 
 interface CoinGeckoSimplePrice {
@@ -13,36 +15,23 @@ interface CoinGeckoSimplePrice {
   };
 }
 
-function daysForRange(range: string): number {
-  switch (range) {
-    case '1D': return 1;
-    case '5D': return 5;
-    case '1M': return 30;
-    case '3M': return 90;
-    case '6M': return 180;
-    case '1Y': return 365;
-    case '5Y': return 1825;
-    default: return 30;
-  }
-}
+const DAYS_MAP: Record<TimeRange, number> = {
+  '1D': 1, '5D': 5, '1M': 30, '3M': 90, '6M': 180, '1Y': 365, '5Y': 1825,
+};
 
 /**
  * Fetch price history from CoinGecko (free, no key).
  */
 export async function fetchCoinGeckoChart(
   coinId: string,
-  range: string = '1M'
-): Promise<{ quote: AssetQuote; history: PricePoint[]; ohlc: OHLC[] }> {
-  const days = daysForRange(range);
+  range: TimeRange = '1M'
+): Promise<{ quote: AssetQuote; history: PricePoint[]; ohlc: OHLC[]; volume: VolumeBar[] }> {
+  const days = DAYS_MAP[range];
+  const isIntraday = days <= 5;
 
-  // Fetch both endpoints in parallel
   const [chartRes, priceRes] = await Promise.all([
-    fetch(
-      `/api/coingecko/api/v3/coins/${coinId}/market_chart?vs_currency=usd&days=${days}`
-    ),
-    fetch(
-      `/api/coingecko/api/v3/simple/price?ids=${coinId}&vs_currencies=usd&include_24hr_change=true&include_24hr_vol=true&include_market_cap=true`
-    ),
+    fetch(`/api/coingecko/api/v3/coins/${coinId}/market_chart?vs_currency=usd&days=${days}`),
+    fetch(`/api/coingecko/api/v3/simple/price?ids=${coinId}&vs_currencies=usd&include_24hr_change=true&include_24hr_vol=true&include_market_cap=true`),
   ]);
 
   if (!chartRes.ok) {
@@ -65,30 +54,61 @@ export async function fetchCoinGeckoChart(
   const previousClose = price / (1 + changePercent / 100);
   const change = price - previousClose;
 
-  // Build history (deduplicate by date)
-  const dateMap = new Map<string, number>();
-  for (const [ts, val] of chartData.prices) {
-    const date = new Date(ts).toISOString().slice(0, 10);
-    dateMap.set(date, val); // last value for each date wins
-  }
-
   const history: PricePoint[] = [];
   const ohlc: OHLC[] = [];
-  for (const [date, val] of dateMap) {
-    history.push({ time: date, value: val });
-    ohlc.push({ time: date, open: val, high: val, low: val, close: val });
+  const volume: VolumeBar[] = [];
+
+  // Build a volume lookup from total_volumes
+  const volMap = new Map<number, number>();
+  for (const [ts, vol] of (chartData.total_volumes ?? [])) {
+    volMap.set(Math.floor(ts / 1000), vol);
   }
 
+  if (isIntraday) {
+    let prevVal = 0;
+    for (const [ts, val] of chartData.prices) {
+      const unixSec = Math.floor(ts / 1000);
+      const time = String(unixSec);
+      history.push({ time, value: val });
+      ohlc.push({ time, open: val, high: val, low: val, close: val });
+      volume.push({
+        time,
+        value: volMap.get(unixSec) ?? 0,
+        color: val >= prevVal ? 'rgba(34,197,94,0.35)' : 'rgba(239,68,68,0.35)',
+      });
+      prevVal = val;
+    }
+  } else {
+    const dateMap = new Map<string, { val: number; vol: number }>();
+    for (const [ts, val] of chartData.prices) {
+      const date = new Date(ts).toISOString().slice(0, 10);
+      const unixSec = Math.floor(ts / 1000);
+      dateMap.set(date, { val, vol: volMap.get(unixSec) ?? 0 });
+    }
+    let prevVal = 0;
+    for (const [date, { val, vol }] of dateMap) {
+      history.push({ time: date, value: val });
+      ohlc.push({ time: date, open: val, high: val, low: val, close: val });
+      volume.push({
+        time: date,
+        value: vol,
+        color: val >= prevVal ? 'rgba(34,197,94,0.35)' : 'rgba(239,68,68,0.35)',
+      });
+      prevVal = val;
+    }
+  }
+
+  // Use 24h data from the price endpoint, not the full chart range
   const quote: AssetQuote = {
     price,
     change,
     changePercent,
-    high24h: Math.max(...history.map((p) => p.value)),
-    low24h: Math.min(...history.map((p) => p.value)),
+    high24h: price * (1 + Math.abs(changePercent) / 100),
+    low24h: price * (1 - Math.abs(changePercent) / 100),
     volume: coinPrice?.usd_24h_vol ?? 0,
     marketCap: coinPrice?.usd_market_cap,
     previousClose,
   };
 
-  return { quote, history, ohlc };
+  return { quote, history, ohlc, volume };
 }

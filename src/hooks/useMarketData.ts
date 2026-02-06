@@ -1,13 +1,14 @@
 import { useQuery } from '@tanstack/react-query';
-import type { Asset, TimeRange, AssetQuote, PricePoint, OHLC } from '../types';
+import type { Asset, TimeRange, AssetQuote, PricePoint, OHLC, VolumeBar } from '../types';
 import { REFETCH_INTERVALS } from '../config/assets';
 import { fetchYahooChart } from '../api/yahoo';
 import { fetchCoinGeckoChart } from '../api/coingecko';
 
-interface MarketData {
+export interface MarketData {
   quote: AssetQuote | null;
   history: PricePoint[];
   ohlc: OHLC[];
+  volume: VolumeBar[];
 }
 
 async function fetchAssetData(asset: Asset, timeRange: TimeRange): Promise<MarketData> {
