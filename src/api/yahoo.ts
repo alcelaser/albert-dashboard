@@ -32,9 +32,17 @@ export async function fetchYahooChart(
   const url = `/api/yahoo/v8/finance/chart/${encodeURIComponent(symbol)}?range=${config.range}&interval=${config.interval}&includePrePost=false`;
 
   const res = await fetch(url);
-  if (!res.ok) throw new Error(`Yahoo Finance error: ${res.status}`);
+  if (!res.ok) {
+    const text = await res.text();
+    console.error(`Yahoo Finance HTTP ${res.status} for ${symbol}:`, text.slice(0, 200));
+    throw new Error(`Yahoo Finance error: ${res.status}`);
+  }
 
   const json = await res.json();
+  if (!json.chart?.result?.[0]) {
+    console.error(`Yahoo Finance no result for ${symbol}:`, JSON.stringify(json).slice(0, 300));
+    throw new Error(`Yahoo Finance: no data returned for ${symbol}`);
+  }
   const result: YahooChartResult = json.chart.result[0];
   const { timestamp, indicators, meta } = result;
   const q = indicators.quote[0];

@@ -11,18 +11,13 @@ interface MarketData {
 }
 
 async function fetchAssetData(asset: Asset, timeRange: TimeRange): Promise<MarketData> {
-  try {
-    if (asset.coingeckoId) {
-      return await fetchCoinGeckoChart(asset.coingeckoId, timeRange);
-    }
-    if (asset.yahooSymbol) {
-      return await fetchYahooChart(asset.yahooSymbol, timeRange);
-    }
-    throw new Error(`No data source for ${asset.symbol}`);
-  } catch (err) {
-    console.error(`Failed to fetch ${asset.symbol}:`, err);
-    return { quote: null, history: [], ohlc: [] };
+  if (asset.coingeckoId) {
+    return await fetchCoinGeckoChart(asset.coingeckoId, timeRange);
   }
+  if (asset.yahooSymbol) {
+    return await fetchYahooChart(asset.yahooSymbol, timeRange);
+  }
+  throw new Error(`No data source for ${asset.symbol}`);
 }
 
 /**
