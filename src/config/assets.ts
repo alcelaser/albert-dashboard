@@ -100,7 +100,7 @@ export const CATEGORY_LABELS: Record<AssetCategory, string> = {
 };
 
 export const REFETCH_INTERVALS = {
-  crypto: 30_000,   // 30s  — crypto never sleeps
+  crypto: 60_000,   // 60s  — CoinGecko free tier is rate-limited
   stock: 60_000,    // 60s
   commodity: 60_000,
   index: 60_000,

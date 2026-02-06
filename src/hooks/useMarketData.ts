@@ -25,12 +25,14 @@ async function fetchAssetData(asset: Asset, timeRange: TimeRange): Promise<Marke
  * React Query hook for a single asset's market data.
  */
 export function useMarketData(asset: Asset, timeRange: TimeRange) {
+  const isCrypto = asset.category === 'crypto';
   return useQuery<MarketData>({
     queryKey: ['market', asset.id, timeRange],
     queryFn: () => fetchAssetData(asset, timeRange),
     refetchInterval: REFETCH_INTERVALS[asset.category],
-    staleTime: 15_000,
-    retry: 2,
+    staleTime: isCrypto ? 30_000 : 15_000, // longer for crypto to ease rate limits
+    retry: isCrypto ? 1 : 2,
+    retryDelay: (attempt) => Math.min(1000 * 2 ** attempt, 30_000),
     placeholderData: (prev) => prev,
   });
 }
@@ -40,12 +42,14 @@ export function useMarketData(asset: Asset, timeRange: TimeRange) {
  * Uses 1M range for the sparkline but fetches like normal.
  */
 export function useQuoteData(asset: Asset) {
+  const isCrypto = asset.category === 'crypto';
   return useQuery<MarketData>({
     queryKey: ['market', asset.id, '1M'],
     queryFn: () => fetchAssetData(asset, '1M'),
     refetchInterval: REFETCH_INTERVALS[asset.category],
-    staleTime: 15_000,
-    retry: 2,
+    staleTime: isCrypto ? 30_000 : 15_000,
+    retry: isCrypto ? 1 : 2,
+    retryDelay: (attempt) => Math.min(1000 * 2 ** attempt, 30_000),
     placeholderData: (prev) => prev,
   });
 }

@@ -4,12 +4,17 @@ import { TIME_RANGES } from '../config/assets';
 interface TimeRangeSelectorProps {
   selected: TimeRange;
   onChange: (range: TimeRange) => void;
+  excludeRanges?: TimeRange[];
 }
 
-export default function TimeRangeSelector({ selected, onChange }: TimeRangeSelectorProps) {
+export default function TimeRangeSelector({ selected, onChange, excludeRanges = [] }: TimeRangeSelectorProps) {
+  const ranges = (Object.keys(TIME_RANGES) as TimeRange[]).filter(
+    (r) => !excludeRanges.includes(r)
+  );
+
   return (
     <div className="flex gap-1">
-      {(Object.keys(TIME_RANGES) as TimeRange[]).map((range) => (
+      {ranges.map((range) => (
         <button
           key={range}
           onClick={() => onChange(range)}

@@ -443,7 +443,11 @@ export default function PriceChart({ asset, timeRange, onTimeRangeChange }: Pric
               </div>
             )}
           </div>
-          <TimeRangeSelector selected={timeRange} onChange={onTimeRangeChange} />
+          <TimeRangeSelector
+            selected={timeRange}
+            onChange={onTimeRangeChange}
+            excludeRanges={asset.category === 'crypto' ? ['5Y'] : []}
+          />
         </div>
 
         {/* ── Toolbar ── */}

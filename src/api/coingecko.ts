@@ -15,9 +15,30 @@ interface CoinGeckoSimplePrice {
   };
 }
 
-const DAYS_MAP: Record<TimeRange, number> = {
-  '1D': 1, '5D': 5, '1M': 30, '3M': 90, '6M': 180, '1Y': 365, '5Y': 1825,
+const DAYS_MAP: Record<TimeRange, string> = {
+  '1D': '1', '5D': '5', '1M': '30', '3M': '90', '6M': '180', '1Y': '365', '5Y': '365',
+  // 5Y is excluded from the UI for crypto — CoinGecko free tier caps at 365 days
 };
+
+/** Small delay helper to stagger requests and respect rate limits. */
+function delay(ms: number) {
+  return new Promise((r) => setTimeout(r, ms));
+}
+
+/**
+ * Fetch with CoinGecko rate-limit awareness.
+ * On 429, waits the Retry-After header (or 60s) then retries once.
+ */
+async function cgFetch(url: string): Promise<Response> {
+  const res = await fetch(url);
+  if (res.status === 429) {
+    const retryAfter = Number(res.headers.get('Retry-After') || '60');
+    console.warn(`[CoinGecko] 429 — backing off ${retryAfter}s`);
+    await delay(retryAfter * 1000);
+    return fetch(url); // single retry
+  }
+  return res;
+}
 
 /**
  * Fetch price history from CoinGecko (free, no key).
@@ -27,12 +48,16 @@ export async function fetchCoinGeckoChart(
   range: TimeRange = '1M'
 ): Promise<{ quote: AssetQuote; history: PricePoint[]; ohlc: OHLC[]; volume: VolumeBar[] }> {
   const days = DAYS_MAP[range];
-  const isIntraday = days <= 5;
+  const isIntraday = days === '1' || days === '5';
 
-  const [chartRes, priceRes] = await Promise.all([
-    fetch(`/api/coingecko/api/v3/coins/${coinId}/market_chart?vs_currency=usd&days=${days}`),
-    fetch(`/api/coingecko/api/v3/simple/price?ids=${coinId}&vs_currencies=usd&include_24hr_change=true&include_24hr_vol=true&include_market_cap=true`),
-  ]);
+  // Stagger the two requests slightly to avoid slamming the rate limit
+  const chartRes = await cgFetch(
+    `/api/coingecko/api/v3/coins/${coinId}/market_chart?vs_currency=usd&days=${days}`
+  );
+  await delay(1500); // 1.5s gap between calls
+  const priceRes = await cgFetch(
+    `/api/coingecko/api/v3/simple/price?ids=${coinId}&vs_currencies=usd&include_24hr_change=true&include_24hr_vol=true&include_market_cap=true`
+  );
 
   if (!chartRes.ok) {
     const text = await chartRes.text();

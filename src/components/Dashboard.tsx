@@ -60,7 +60,7 @@ export default function Dashboard() {
       {/* Main Chart */}
       <PriceChart
         asset={selectedAsset}
-        timeRange={timeRange}
+        timeRange={selectedAsset.category === 'crypto' && timeRange === '5Y' ? '1Y' : timeRange}
         onTimeRangeChange={setTimeRange}
       />
 
