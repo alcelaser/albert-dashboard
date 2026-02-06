@@ -13,7 +13,7 @@ export interface Asset {
 export type AssetCategory = 'stock' | 'crypto' | 'commodity' | 'index';
 
 export interface PricePoint {
-  time: string; // YYYY-MM-DD
+  time: string; // YYYY-MM-DD or Unix timestamp (number as string for intraday)
   value: number;
 }
 
@@ -25,6 +25,12 @@ export interface OHLC {
   close: number;
 }
 
+export interface VolumeBar {
+  time: string;
+  value: number;
+  color: string;
+}
+
 export interface AssetQuote {
   price: number;
   change: number;
@@ -34,15 +40,6 @@ export interface AssetQuote {
   volume: number;
   marketCap?: number;
   previousClose: number;
-}
-
-export interface AssetData {
-  asset: Asset;
-  quote: AssetQuote | null;
-  history: PricePoint[];
-  ohlc: OHLC[];
-  loading: boolean;
-  error: string | null;
 }
 
 export type TimeRange = '1D' | '5D' | '1M' | '3M' | '6M' | '1Y' | '5Y';

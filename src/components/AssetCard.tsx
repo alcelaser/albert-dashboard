@@ -1,7 +1,7 @@
 import type { Asset } from '../types';
 import { useQuoteData } from '../hooks/useMarketData';
 import { formatPrice, formatPercent, changeColor } from '../utils/format';
-import Sparkline from './Sparkline';
+import Sparkline from './SvgSparkline';
 
 interface AssetCardProps {
   asset: Asset;
