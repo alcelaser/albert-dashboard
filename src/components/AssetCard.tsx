@@ -10,7 +10,7 @@ interface AssetCardProps {
 }
 
 export default function AssetCard({ asset, selected, onClick }: AssetCardProps) {
-  const { data, isLoading } = useQuoteData(asset);
+  const { data, isLoading, error } = useQuoteData(asset);
   const quote = data?.quote;
   const history = data?.history ?? [];
 
@@ -59,7 +59,9 @@ export default function AssetCard({ asset, selected, onClick }: AssetCardProps) 
           </span>
         </div>
       ) : (
-        <span className="text-xs text-red-400">Error loading data</span>
+        <span className="text-xs text-red-400" title={error?.message}>
+          {error?.message?.slice(0, 40) || 'Error loading data'}
+        </span>
       )}
     </button>
   );
