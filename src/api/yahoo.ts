@@ -75,7 +75,6 @@ export async function fetchYahooChart(
   const changePercent = previousClose ? (change / previousClose) * 100 : 0;
 
   // Compute 24h high/low from recent data
-  const recentPrices = q.close.filter((v) => v != null);
   const recentHighs = q.high.filter((v) => v != null);
   const recentLows = q.low.filter((v) => v != null);
 
