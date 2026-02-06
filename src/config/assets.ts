@@ -1,4 +1,4 @@
-import type { Asset, TimeRange, TimeRangeConfig } from '../types';
+import type { Asset, AssetCategory, TimeRange, TimeRangeConfig } from '../types';
 
 export const ASSETS: Asset[] = [
   // Stocks
@@ -92,7 +92,7 @@ export const TIME_RANGES: Record<TimeRange, TimeRangeConfig> = {
   '5Y': { label: '5Y', range: '5y', interval: '1mo' },
 };
 
-export const CATEGORY_LABELS: Record<string, string> = {
+export const CATEGORY_LABELS: Record<AssetCategory, string> = {
   stock: 'Stocks',
   crypto: 'Crypto',
   commodity: 'Commodities',
