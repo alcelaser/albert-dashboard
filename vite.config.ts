@@ -10,11 +10,36 @@ export default defineConfig({
         target: 'https://query1.finance.yahoo.com',
         changeOrigin: true,
         rewrite: (path) => path.replace(/^\/api\/yahoo/, ''),
+        headers: {
+          'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+        },
+        configure: (proxy) => {
+          proxy.on('proxyReq', (_proxyReq, req) => {
+            console.log(`[proxy] Yahoo → ${req.url}`);
+          });
+          proxy.on('proxyRes', (proxyRes, req) => {
+            console.log(`[proxy] Yahoo ← ${proxyRes.statusCode} ${req.url}`);
+          });
+          proxy.on('error', (err, req) => {
+            console.error(`[proxy] Yahoo ERROR ${req.url}:`, err.message);
+          });
+        },
       },
       '/api/coingecko': {
         target: 'https://api.coingecko.com',
         changeOrigin: true,
         rewrite: (path) => path.replace(/^\/api\/coingecko/, ''),
+        configure: (proxy) => {
+          proxy.on('proxyReq', (_proxyReq, req) => {
+            console.log(`[proxy] CoinGecko → ${req.url}`);
+          });
+          proxy.on('proxyRes', (proxyRes, req) => {
+            console.log(`[proxy] CoinGecko ← ${proxyRes.statusCode} ${req.url}`);
+          });
+          proxy.on('error', (err, req) => {
+            console.error(`[proxy] CoinGecko ERROR ${req.url}:`, err.message);
+          });
+        },
       },
     },
   },

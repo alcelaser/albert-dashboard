@@ -45,8 +45,16 @@ export async function fetchCoinGeckoChart(
     ),
   ]);
 
-  if (!chartRes.ok) throw new Error(`CoinGecko chart error: ${chartRes.status}`);
-  if (!priceRes.ok) throw new Error(`CoinGecko price error: ${priceRes.status}`);
+  if (!chartRes.ok) {
+    const text = await chartRes.text();
+    console.error(`CoinGecko chart HTTP ${chartRes.status} for ${coinId}:`, text.slice(0, 200));
+    throw new Error(`CoinGecko chart error: ${chartRes.status}`);
+  }
+  if (!priceRes.ok) {
+    const text = await priceRes.text();
+    console.error(`CoinGecko price HTTP ${priceRes.status} for ${coinId}:`, text.slice(0, 200));
+    throw new Error(`CoinGecko price error: ${priceRes.status}`);
+  }
 
   const chartData: CoinGeckoMarketChart = await chartRes.json();
   const priceData: CoinGeckoSimplePrice = await priceRes.json();
