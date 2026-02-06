@@ -1,0 +1,27 @@
+@import "tailwindcss";
+
+@theme {
+  --color-up: #22c55e;
+  --color-down: #ef4444;
+  --color-muted: #71717a;
+  --color-surface: #18181b;
+  --color-surface-hover: #27272a;
+  --color-border: #3f3f46;
+}
+
+/* Smooth scrollbar */
+::-webkit-scrollbar {
+  width: 6px;
+}
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+::-webkit-scrollbar-thumb {
+  background: var(--color-border);
+  border-radius: 3px;
+}
+
+/* Chart container transitions */
+.tv-lightweight-charts {
+  border-radius: 8px;
+}
